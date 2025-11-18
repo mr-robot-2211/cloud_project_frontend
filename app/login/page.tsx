@@ -5,28 +5,20 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import { sendAnalyticsEvent } from "@/lib/api";
 
-// Helper function to get user service base URL
-// Follows the same pattern as other services (NEXT_PUBLIC_COURSE_SERVICE, etc.)
-// Automatically upgrades HTTP to HTTPS when page is served over HTTPS (to avoid mixed content errors)
-const getUserServiceBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_USER_SERVICE || 'http://localhost:8000';
-  
-  // If page is served over HTTPS and URL is HTTP (and not localhost), upgrade to HTTPS
-  if (typeof window !== 'undefined' && 
-      window.location.protocol === 'https:' && 
-      envUrl.startsWith('http://') &&
-      !envUrl.includes('localhost') && 
-      !envUrl.includes('127.0.0.1')) {
-    return envUrl.replace('http://', 'https://').replace(/\/$/, '');
+// Helper function to get user service API URL
+// Uses Next.js API route as proxy to avoid mixed content issues (HTTPS frontend -> HTTP backend)
+// The proxy route at /api/users/[...path] forwards requests to the actual user service
+const getUserServiceUrl = () => {
+  // Use the Next.js API route as a proxy when in production (HTTPS)
+  // This avoids mixed content errors (HTTPS page -> HTTP backend)
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    // Use relative URL to proxy through Next.js API route
+    return '/api/users';
   }
   
-  // Otherwise, use the URL as-is (remove trailing slash if present)
-  return envUrl.replace(/\/$/, '');
-};
-
-// Helper function to get full user service API URL
-const getUserServiceUrl = () => {
-  const baseUrl = getUserServiceBaseUrl().replace(/\/$/, ''); // Remove trailing slash
+  // For local development (HTTP), use the service directly
+  const envUrl = process.env.NEXT_PUBLIC_USER_SERVICE || 'http://localhost:8000';
+  const baseUrl = envUrl.replace(/\/$/, ''); // Remove trailing slash
   return `${baseUrl}/api/users`;
 };
 
