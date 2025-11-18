@@ -7,8 +7,21 @@ import { sendAnalyticsEvent } from "@/lib/api";
 
 // Helper function to get user service base URL
 // Follows the same pattern as other services (NEXT_PUBLIC_COURSE_SERVICE, etc.)
+// Automatically upgrades HTTP to HTTPS when page is served over HTTPS (to avoid mixed content errors)
 const getUserServiceBaseUrl = () => {
-  return process.env.NEXT_PUBLIC_USER_SERVICE || 'http://localhost:8000';
+  const envUrl = process.env.NEXT_PUBLIC_USER_SERVICE || 'http://localhost:8000';
+  
+  // If page is served over HTTPS and URL is HTTP (and not localhost), upgrade to HTTPS
+  if (typeof window !== 'undefined' && 
+      window.location.protocol === 'https:' && 
+      envUrl.startsWith('http://') &&
+      !envUrl.includes('localhost') && 
+      !envUrl.includes('127.0.0.1')) {
+    return envUrl.replace('http://', 'https://').replace(/\/$/, '');
+  }
+  
+  // Otherwise, use the URL as-is (remove trailing slash if present)
+  return envUrl.replace(/\/$/, '');
 };
 
 // Helper function to get full user service API URL
