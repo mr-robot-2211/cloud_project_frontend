@@ -5,26 +5,16 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import { sendAnalyticsEvent } from "@/lib/api";
 
-// Helper function to get user service URL
-// Backend URL structure: /api/users/signup/ and /api/users/login/
+// Helper function to get user service base URL
+// Follows the same pattern as other services (NEXT_PUBLIC_COURSE_SERVICE, etc.)
+const getUserServiceBaseUrl = () => {
+  return process.env.NEXT_PUBLIC_USER_SERVICE || 'http://localhost:8000';
+};
+
+// Helper function to get full user service API URL
 const getUserServiceUrl = () => {
-  // Always use the correct URL structure
-  // Backend: path("api/users/", include("users.urls")) + path("signup/", ...)
-  const defaultUrl = 'http://localhost:8000/api/users';
-  const envUrl = process.env.NEXT_PUBLIC_USER_SERVICE;
-  
-  // Validate and use correct URL
-  if (envUrl) {
-    // If env var doesn't end with /api/users, fix it
-    if (!envUrl.endsWith('/api/users') && !envUrl.endsWith('/api/users/')) {
-      console.warn('NEXT_PUBLIC_USER_SERVICE may be incorrect:', envUrl);
-      console.warn('Using default URL:', defaultUrl);
-      return defaultUrl;
-    }
-    return envUrl.replace(/\/$/, ''); // Remove trailing slash
-  }
-  
-  return defaultUrl;
+  const baseUrl = getUserServiceBaseUrl().replace(/\/$/, ''); // Remove trailing slash
+  return `${baseUrl}/api/users`;
 };
 
 export default function LoginPage() {
