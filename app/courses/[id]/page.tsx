@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { apiClient, sendAnalyticsEvent } from "@/lib/api";
+import { AxiosResponse } from "axios";
 
 interface CourseMaterial {
   id: number;
@@ -54,7 +55,15 @@ export default function CourseDetailPage() {
             `${process.env.NEXT_PUBLIC_CONTENT_SERVICE || 'http://localhost:8003'}/api/courses/${id}/materials`
           );
         }
-        return Promise.resolve({ data: [] });
+        // Return a properly typed response for non-enrolled users
+        const mockResponse: AxiosResponse<any> = {
+          data: [],
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as any
+        };
+        return Promise.resolve(mockResponse);
       })
       .then((res) => {
         if (res.data) {
