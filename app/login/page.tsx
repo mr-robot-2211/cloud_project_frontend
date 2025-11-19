@@ -6,18 +6,26 @@ import axios from "axios";
 import { sendAnalyticsEvent } from "@/lib/api";
 
 // Helper function to get user service API URL
-// Always uses NEXT_PUBLIC_USER_SERVICE environment variable
-// Uses proxy route when frontend is HTTPS and backend is HTTP (to avoid mixed content)
+// Uses NEXT_PUBLIC_USER_SERVICE environment variable
+// Uses proxy route when frontend is HTTPS to avoid mixed content errors
 const getUserServiceUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_USER_SERVICE || 'http://localhost:8000';
-  const baseUrl = envUrl.replace(/\/$/, ''); // Remove trailing slash
-  
-  // If frontend is HTTPS and backend is HTTP, use proxy route to avoid mixed content errors
-  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && baseUrl.startsWith('http://')) {
-    return '/api/users';
+  // Check if we're in browser and page is HTTPS
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol;
+    const isHttps = protocol === 'https:';
+    
+    // If HTTPS frontend, always use proxy route to avoid mixed content errors
+    // The proxy route uses NEXT_PUBLIC_USER_SERVICE internally
+    if (isHttps) {
+      console.log('[Login] Using proxy route (HTTPS frontend detected)');
+      return '/api/users';
+    }
   }
   
-  // Otherwise, use the direct URL
+  // For HTTP (local development) or SSR, use NEXT_PUBLIC_USER_SERVICE directly
+  const envUrl = process.env.NEXT_PUBLIC_USER_SERVICE || 'http://localhost:8000';
+  const baseUrl = envUrl.replace(/\/$/, ''); // Remove trailing slash
+  console.log('[Login] Using direct URL:', `${baseUrl}/api/users`);
   return `${baseUrl}/api/users`;
 };
 
