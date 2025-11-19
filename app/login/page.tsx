@@ -6,27 +6,13 @@ import axios from "axios";
 import { sendAnalyticsEvent } from "@/lib/api";
 
 // Helper function to get user service API URL
-// Uses NEXT_PUBLIC_USER_SERVICE environment variable
-// Uses proxy route when frontend is HTTPS to avoid mixed content errors
+// Always uses proxy route to avoid mixed content errors (HTTPS frontend -> HTTP backend)
+// The proxy route uses NEXT_PUBLIC_USER_SERVICE internally on the server side
 const getUserServiceUrl = () => {
-  // Check if we're in browser and page is HTTPS
-  if (typeof window !== 'undefined') {
-    const protocol = window.location.protocol;
-    const isHttps = protocol === 'https:';
-    
-    // If HTTPS frontend, always use proxy route to avoid mixed content errors
-    // The proxy route uses NEXT_PUBLIC_USER_SERVICE internally
-    if (isHttps) {
-      console.log('[Login] Using proxy route (HTTPS frontend detected)');
-      return '/api/users';
-    }
-  }
-  
-  // For HTTP (local development) or SSR, use NEXT_PUBLIC_USER_SERVICE directly
-  const envUrl = process.env.NEXT_PUBLIC_USER_SERVICE || 'http://localhost:8000';
-  const baseUrl = envUrl.replace(/\/$/, ''); // Remove trailing slash
-  console.log('[Login] Using direct URL:', `${baseUrl}/api/users`);
-  return `${baseUrl}/api/users`;
+  // Always use proxy route - it handles forwarding to NEXT_PUBLIC_USER_SERVICE server-side
+  // This avoids mixed content errors when frontend is HTTPS and backend is HTTP
+  // Also works for local development
+  return '/api/users';
 };
 
 export default function LoginPage() {
