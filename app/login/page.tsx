@@ -61,7 +61,10 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const userServiceUrl = getUserServiceUrl();
-      const fullUrl = `${userServiceUrl}/signup/`;
+      // Ensure we're using the proxy route (relative URL)
+      const fullUrl = userServiceUrl.startsWith('/') 
+        ? `${userServiceUrl}/signup/` 
+        : `/api/users/signup/`;
       console.log('Signup URL:', fullUrl); // Debug log
       const res = await axios.post(
         fullUrl,
@@ -92,7 +95,10 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const userServiceUrl = getUserServiceUrl();
-      const fullUrl = `${userServiceUrl}/login/`;
+      // Ensure we're using the proxy route (relative URL)
+      const fullUrl = userServiceUrl.startsWith('/') 
+        ? `${userServiceUrl}/login/` 
+        : `/api/users/login/`;
       console.log('Login URL:', fullUrl); // Debug log
       const res = await axios.post(
         fullUrl,
