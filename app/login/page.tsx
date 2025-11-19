@@ -6,17 +6,8 @@ import axios from "axios";
 import { sendAnalyticsEvent } from "@/lib/api";
 
 // Helper function to get user service API URL
-// Uses Next.js API route as proxy to avoid mixed content issues (HTTPS frontend -> HTTP backend)
-// The proxy route at /api/users/[...path] forwards requests to the actual user service
+// Always uses NEXT_PUBLIC_USER_SERVICE environment variable
 const getUserServiceUrl = () => {
-  // Use the Next.js API route as a proxy when in production (HTTPS)
-  // This avoids mixed content errors (HTTPS page -> HTTP backend)
-  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
-    // Use relative URL to proxy through Next.js API route
-    return '/api/users';
-  }
-  
-  // For local development (HTTP), use the service directly
   const envUrl = process.env.NEXT_PUBLIC_USER_SERVICE || 'http://localhost:8000';
   const baseUrl = envUrl.replace(/\/$/, ''); // Remove trailing slash
   return `${baseUrl}/api/users`;

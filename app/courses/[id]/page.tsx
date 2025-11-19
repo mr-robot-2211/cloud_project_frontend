@@ -55,15 +55,8 @@ export default function CourseDetailPage() {
             `${process.env.NEXT_PUBLIC_CONTENT_SERVICE || 'http://localhost:8003'}/api/courses/${id}/materials`
           );
         }
-        // Return a properly typed response for non-enrolled users
-        const mockResponse: AxiosResponse<any> = {
-          data: [],
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config: {} as any
-        };
-        return Promise.resolve(mockResponse);
+        // Return a compatible response object when not enrolled
+        return Promise.resolve({ data: [] } as AxiosResponse<never[]>);
       })
       .then((res) => {
         if (res.data) {
