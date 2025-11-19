@@ -7,9 +7,17 @@ import { sendAnalyticsEvent } from "@/lib/api";
 
 // Helper function to get user service API URL
 // Always uses NEXT_PUBLIC_USER_SERVICE environment variable
+// Uses proxy route when frontend is HTTPS and backend is HTTP (to avoid mixed content)
 const getUserServiceUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_USER_SERVICE || 'http://localhost:8000';
   const baseUrl = envUrl.replace(/\/$/, ''); // Remove trailing slash
+  
+  // If frontend is HTTPS and backend is HTTP, use proxy route to avoid mixed content errors
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && baseUrl.startsWith('http://')) {
+    return '/api/users';
+  }
+  
+  // Otherwise, use the direct URL
   return `${baseUrl}/api/users`;
 };
 

@@ -22,19 +22,39 @@ async function handleRequest(
   method: string
 ) {
   try {
-    const params = await context.params;
     // Get the user service base URL
-    const userServiceUrl = process.env.NEXT_PUBLIC_USER_SERVICE || 'http://localhost:8000';
+    const userServiceUrl = process.env.NEXT_PUBLIC_USER_SERVICE;
     
+    // In production (Vercel), the environment variable must be set
     if (!userServiceUrl) {
       console.error('[Proxy] NEXT_PUBLIC_USER_SERVICE environment variable is not set');
+      if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+        return NextResponse.json(
+          { 
+            detail: "User service URL not configured. Please set NEXT_PUBLIC_USER_SERVICE environment variable in Vercel.",
+            error: "MISSING_ENV_VAR"
+          },
+          { status: 500 }
+        );
+      }
+      // In development, use localhost as fallback
+      console.warn(`[Proxy] Using fallback URL: http://localhost:8000`);
+    }
+    
+    const finalUrl = userServiceUrl || 'http://localhost:8000';
+    const baseUrl = finalUrl.replace(/\/$/, '');
+    
+    // Get params - handle both sync and async params
+    let params: { path: string[] };
+    try {
+      params = await context.params;
+    } catch (paramError: any) {
+      console.error('[Proxy] Error getting params:', paramError);
       return NextResponse.json(
-        { detail: "User service URL not configured. Please set NEXT_PUBLIC_USER_SERVICE environment variable." },
+        { detail: "Error processing request parameters", error: paramError.message },
         { status: 500 }
       );
     }
-    
-    const baseUrl = userServiceUrl.replace(/\/$/, '');
     
     // Reconstruct the path
     const path = params.path?.join('/') || '';
@@ -46,6 +66,7 @@ async function handleRequest(
     
     console.log(`[Proxy] ${method} ${targetUrl}`);
     console.log(`[Proxy] Base URL: ${baseUrl}, Path: ${path}`);
+    console.log(`[Proxy] User Service URL from env: ${userServiceUrl}`);
     
     // Get request body if present
     let body: string | undefined;
@@ -137,10 +158,21 @@ async function handleRequest(
     return NextResponse.json(data, { status: response.status });
   } catch (error: any) {
     console.error("[Proxy] Unexpected error:", error);
-    return NextResponse.json(
-      { detail: error.message || "Internal server error in proxy" },
-      { status: 500 }
-    );
+    console.error("[Proxy] Error stack:", error.stack);
+    console.error("[Proxy] Error name:", error.name);
+    console.error("[Proxy] Error message:", error.message);
+    
+    // Provide more detailed error information
+    const errorDetail = {
+      detail: error.message || "Internal server error in proxy",
+      error: error.name || "UnknownError",
+      ...(process.env.NODE_ENV === 'development' && {
+        stack: error.stack,
+        userServiceUrl: process.env.NEXT_PUBLIC_USER_SERVICE || 'not set'
+      })
+    };
+    
+    return NextResponse.json(errorDetail, { status: 500 });
   }
 }
 
