@@ -8,7 +8,7 @@ export default function EnrollPage() {
 
   useEffect(() => {
     apiClient
-      .get(`${process.env.NEXT_PUBLIC_ENROLL_SERVICE}/my-enrollments`)
+      .get(`/api/enrollments/my-enrollments`)
       .then((res) => setEnrolls(res.data))
       .catch(() => {});
   }, []);

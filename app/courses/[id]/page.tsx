@@ -37,11 +37,11 @@ export default function CourseDetailPage() {
 
     // Load course
     apiClient
-      .get(`${process.env.NEXT_PUBLIC_COURSE_SERVICE}/api/courses/${id}/`)
+      .get(`/api/courses/${id}/`)
       .then((res) => {
         setCourse(res.data);
         // Check enrollment
-        return apiClient.get(`${process.env.NEXT_PUBLIC_ENROLL_SERVICE}/my-enrollments`);
+        return apiClient.get(`/api/enrollments/my-enrollments`);
       })
       .then((res) => {
         const enrollments = res.data || [];
@@ -52,7 +52,7 @@ export default function CourseDetailPage() {
         // Load materials if enrolled
         if (enrolled) {
           return apiClient.get(
-            `${process.env.NEXT_PUBLIC_CONTENT_SERVICE || 'http://localhost:8003'}/api/courses/${id}/materials`
+            `/api/content/courses/${id}/materials`
           );
         }
         // Return a compatible response object when not enrolled
@@ -73,7 +73,7 @@ export default function CourseDetailPage() {
   const enroll = async () => {
     try {
       await apiClient.post(
-        `${process.env.NEXT_PUBLIC_ENROLL_SERVICE}/enroll`,
+        `/api/enrollments/enroll`,
         { course_id: id }
       );
       alert("Enrolled successfully");
@@ -83,7 +83,7 @@ export default function CourseDetailPage() {
       // Reload materials after enrollment
       try {
         const res = await apiClient.get(
-          `${process.env.NEXT_PUBLIC_CONTENT_SERVICE || 'http://localhost:8003'}/api/courses/${id}/materials`
+          `/api/content/courses/${id}/materials`
         );
         setMaterials(res.data || []);
       } catch (err) {
@@ -115,15 +115,13 @@ export default function CourseDetailPage() {
 
     setUploading(true);
     try {
-      const contentServiceUrl = process.env.NEXT_PUBLIC_CONTENT_SERVICE || 'http://localhost:8003';
-      
       // Step 1: Get presigned URL from content service
       const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase() || '';
       const materialType = fileExtension === 'pdf' ? 'pdf' : 
                           ['mp4', 'avi', 'mov', 'webm'].includes(fileExtension) ? 'video' : 'other';
       
       const uploadResponse = await apiClient.post(
-        `${contentServiceUrl}/api/upload`,
+        `/api/content/upload`,
         {
           course_id: parseInt(id as string),
           title: selectedFile.name,
@@ -153,7 +151,7 @@ export default function CourseDetailPage() {
       
       // Step 3: Reload materials list
       const res = await apiClient.get(
-        `${contentServiceUrl}/api/courses/${id}/materials`
+        `/api/content/courses/${id}/materials`
       );
       setMaterials(res.data || []);
     } catch (err: any) {
@@ -167,9 +165,8 @@ export default function CourseDetailPage() {
   const loadMaterials = async () => {
     if (!id || !isEnrolled) return;
     try {
-      const contentServiceUrl = process.env.NEXT_PUBLIC_CONTENT_SERVICE || 'http://localhost:8003';
       const res = await apiClient.get(
-        `${contentServiceUrl}/api/courses/${id}/materials`
+        `/api/content/courses/${id}/materials`
       );
       setMaterials(res.data || []);
     } catch (err) {

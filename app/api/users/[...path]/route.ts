@@ -85,8 +85,19 @@ async function handleRequest(
     // Include query parameters if present
     const searchParams = req.nextUrl.searchParams.toString();
     const queryString = searchParams ? `?${searchParams}` : '';
-    // Ensure path has exactly one trailing slash before query string
-    const targetUrl = `${baseUrl}/api/users/${path.replace(/\/$/, "")}/${queryString}`;
+    
+    // User service expects /api/users/login/
+    // Remove /api/users if already present in baseUrl to avoid duplication
+    let finalBaseUrl = baseUrl;
+    if (baseUrl.endsWith('/api/users')) {
+      finalBaseUrl = baseUrl.replace(/\/api\/users$/, '');
+    } else if (baseUrl.endsWith('/api/users/')) {
+      finalBaseUrl = baseUrl.replace(/\/api\/users\/$/, '');
+    }
+    const cleanPath = path.replace(/^\//, '').replace(/\/$/, "");
+    const targetUrl = cleanPath
+      ? `${finalBaseUrl}/api/users/${cleanPath}/${queryString}`
+      : `${finalBaseUrl}/api/users/${queryString}`;
     
     console.log(`[Proxy] ${method} ${targetUrl}`);
     console.log(`[Proxy] Base URL: ${baseUrl}, Path: ${path}`);
@@ -208,7 +219,8 @@ async function handleRequest(
     
     console.log(`[Proxy] Response status: ${response.status}`, {
       hasData: !!data,
-      dataKeys: data ? Object.keys(data) : []
+      dataKeys: data ? Object.keys(data) : [],
+      dataDetail: data?.detail || 'No detail field'
     });
     
     // Return response with same status

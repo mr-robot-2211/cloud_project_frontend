@@ -9,7 +9,7 @@ export default function CoursesPage() {
 
   useEffect(() => {
     apiClient
-      .get(`${process.env.NEXT_PUBLIC_COURSE_SERVICE}/api/courses/`)
+      .get(`/api/courses/`)
       .then((res) => setCourses(res.data))
       .catch(() => alert("Failed to fetch courses"));
   }, []);
