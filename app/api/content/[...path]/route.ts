@@ -23,15 +23,17 @@ async function handleRequest(
 ) {
   try {
     // Get the content service base URL
-    const contentServiceUrl = process.env.NEXT_PUBLIC_CONTENT_SERVICE;
+    // Use server-side only env var (without NEXT_PUBLIC_) to avoid exposing to client
+    // Fallback to NEXT_PUBLIC_CONTENT_SERVICE for backward compatibility
+    const contentServiceUrl = process.env.CONTENT_SERVICE_URL || process.env.NEXT_PUBLIC_CONTENT_SERVICE;
     
     // In production (Vercel), the environment variable must be set
     if (!contentServiceUrl) {
-      console.error('[Proxy] NEXT_PUBLIC_CONTENT_SERVICE environment variable is not set');
+      console.error('[Proxy] CONTENT_SERVICE_URL or NEXT_PUBLIC_CONTENT_SERVICE environment variable is not set');
       if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
         return NextResponse.json(
           { 
-            detail: "Content service URL not configured. Please set NEXT_PUBLIC_CONTENT_SERVICE environment variable in Vercel.",
+            detail: "Content service URL not configured. Please set CONTENT_SERVICE_URL environment variable in Vercel.",
             error: "MISSING_ENV_VAR",
           },
           { status: 500 }
@@ -77,6 +79,7 @@ async function handleRequest(
     const targetUrl = `${baseUrl}/api/${path.replace(/\/$/, "")}${queryString}`;
     
     console.log(`[Proxy] ${method} ${targetUrl}`);
+    console.log(`[Proxy] Content service base URL: ${baseUrl}`);
     
     // Get request body if present
     let body: string | undefined;
@@ -112,22 +115,53 @@ async function handleRequest(
     
     let response: Response;
     try {
+      console.log(`[Proxy] Attempting fetch to: ${targetUrl}`);
       response = await fetch(targetUrl, {
         ...fetchOptions,
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
+      console.log(`[Proxy] Fetch completed with status: ${response.status}`);
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
       console.error(`[Proxy] Fetch error for ${targetUrl}:`, fetchError);
+      console.error(`[Proxy] Fetch error details:`, {
+        name: fetchError.name,
+        message: fetchError.message,
+        code: fetchError.code,
+        cause: fetchError.cause
+      });
       
       if (fetchError.name === 'AbortError') {
         return NextResponse.json(
           { 
             detail: "Request timeout - the content service did not respond in time",
             error: "TIMEOUT",
+            targetUrl: targetUrl
           },
           { status: 504 }
+        );
+      }
+      
+      if (fetchError.code === 'ECONNREFUSED' || fetchError.message?.includes('ECONNREFUSED')) {
+        return NextResponse.json(
+          { 
+            detail: "Connection refused - the content service may be down or unreachable",
+            error: "CONNECTION_REFUSED",
+            targetUrl: targetUrl
+          },
+          { status: 503 }
+        );
+      }
+      
+      if (fetchError.message?.includes('ENOTFOUND') || fetchError.message?.includes('getaddrinfo')) {
+        return NextResponse.json(
+          { 
+            detail: "DNS resolution failed - check the content service URL",
+            error: "DNS_ERROR",
+            targetUrl: targetUrl
+          },
+          { status: 502 }
         );
       }
       
@@ -135,6 +169,8 @@ async function handleRequest(
         { 
           detail: fetchError.message || "Failed to connect to content service",
           error: "FETCH_ERROR",
+          targetUrl: targetUrl,
+          errorName: fetchError.name
         },
         { status: 502 }
       );
