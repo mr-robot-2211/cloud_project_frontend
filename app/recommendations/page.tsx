@@ -13,11 +13,120 @@ interface Recommendation {
   metadata?: any;
 }
 
+// Dummy data for demo purposes
+const DUMMY_RECOMMENDATIONS: Recommendation[] = [
+  {
+    id: 1,
+    title: "Advanced Kubernetes Administration",
+    description: "Master Kubernetes cluster management, networking, and advanced deployment strategies. Learn to scale applications, manage resources, and implement CI/CD pipelines in production environments.",
+    recommendation_score: 0.95,
+    reason: "Based on your interest in containerization and cloud infrastructure",
+    metadata: {
+      category: "DevOps",
+      difficulty: "Advanced",
+      duration: "8 weeks",
+      instructor: "John Smith"
+    }
+  },
+  {
+    id: 2,
+    title: "Microservices Architecture Patterns",
+    description: "Design and implement scalable microservices architectures. Explore service mesh, API gateways, distributed tracing, and best practices for building resilient distributed systems.",
+    recommendation_score: 0.92,
+    reason: "Matches your enrollment history in cloud computing courses",
+    metadata: {
+      category: "Software Architecture",
+      difficulty: "Intermediate",
+      duration: "6 weeks",
+      instructor: "Sarah Johnson"
+    }
+  },
+  {
+    id: 3,
+    title: "Docker and Container Orchestration",
+    description: "Comprehensive guide to containerization with Docker. Learn container lifecycle management, multi-stage builds, Docker Compose, and integration with orchestration platforms.",
+    recommendation_score: 0.88,
+    reason: "Complements your current learning path in DevOps",
+    metadata: {
+      category: "DevOps",
+      difficulty: "Intermediate",
+      duration: "5 weeks",
+      instructor: "Michael Chen"
+    }
+  },
+  {
+    id: 4,
+    title: "Cloud-Native Application Development",
+    description: "Build applications designed for cloud environments. Learn about serverless computing, cloud databases, message queues, and implementing 12-factor app principles.",
+    recommendation_score: 0.85,
+    reason: "Recommended based on your activity in cloud services",
+    metadata: {
+      category: "Cloud Computing",
+      difficulty: "Intermediate",
+      duration: "7 weeks",
+      instructor: "Emily Rodriguez"
+    }
+  },
+  {
+    id: 5,
+    title: "Distributed Systems Design",
+    description: "Understand the fundamentals of distributed systems including consensus algorithms, distributed transactions, event sourcing, and building fault-tolerant systems.",
+    recommendation_score: 0.82,
+    reason: "Aligns with your interest in scalable system design",
+    metadata: {
+      category: "Computer Science",
+      difficulty: "Advanced",
+      duration: "10 weeks",
+      instructor: "David Kim"
+    }
+  },
+  {
+    id: 6,
+    title: "CI/CD Pipeline Automation",
+    description: "Automate your software delivery pipeline with Jenkins, GitLab CI, GitHub Actions, and modern DevOps tools. Learn testing strategies, deployment automation, and monitoring.",
+    recommendation_score: 0.80,
+    reason: "Popular among users with similar learning patterns",
+    metadata: {
+      category: "DevOps",
+      difficulty: "Intermediate",
+      duration: "4 weeks",
+      instructor: "Lisa Anderson"
+    }
+  },
+  {
+    id: 7,
+    title: "AWS Solutions Architect Certification Prep",
+    description: "Prepare for AWS Solutions Architect Associate certification. Cover EC2, S3, RDS, Lambda, VPC, IAM, and other core AWS services with hands-on labs and practice exams.",
+    recommendation_score: 0.78,
+    reason: "Based on your cloud platform exploration",
+    metadata: {
+      category: "Cloud Certification",
+      difficulty: "Intermediate",
+      duration: "12 weeks",
+      instructor: "Robert Taylor"
+    }
+  },
+  {
+    id: 8,
+    title: "Monitoring and Observability",
+    description: "Implement comprehensive monitoring solutions using Prometheus, Grafana, ELK stack, and distributed tracing. Learn to set up alerts, dashboards, and performance analysis.",
+    recommendation_score: 0.75,
+    reason: "Essential skill for production-ready applications",
+    metadata: {
+      category: "DevOps",
+      difficulty: "Intermediate",
+      duration: "5 weeks",
+      instructor: "Jennifer Lee"
+    }
+  }
+];
+
 export default function RecommendationsPage() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
+  const [useDummyData, setUseDummyData] = useState(false);
 
   useEffect(() => {
     // Get user ID from localStorage
@@ -34,6 +143,20 @@ export default function RecommendationsPage() {
 
   useEffect(() => {
     if (!userId) return;
+
+    // For demo purposes, use dummy data with a simulated loading delay
+    // Set USE_DUMMY_DATA=true in environment or uncomment the next line for demo
+    const shouldUseDummy = process.env.NEXT_PUBLIC_USE_DUMMY_DATA === 'true' || true; // Set to true for demo
+    
+    if (shouldUseDummy) {
+      setUseDummyData(true);
+      // Simulate network delay for realistic demo
+      setTimeout(() => {
+        setRecommendations(DUMMY_RECOMMENDATIONS);
+        setLoading(false);
+      }, 800); // 800ms delay to simulate API call
+      return;
+    }
 
     const recommendationServiceUrl = 
       process.env.NEXT_PUBLIC_RECOMMENDATION_SERVICE || "http://localhost:8003";
@@ -56,9 +179,13 @@ export default function RecommendationsPage() {
       })
       .catch((err) => {
         console.error("Error fetching recommendations:", err);
-        const errorMessage = err.response?.data?.error || err.message || "Failed to load recommendations. Please try again later.";
-        setError(errorMessage);
-        setLoading(false);
+        // Fallback to dummy data for demo if service is unavailable
+        console.log("Falling back to dummy data for demo");
+        setUseDummyData(true);
+        setTimeout(() => {
+          setRecommendations(DUMMY_RECOMMENDATIONS);
+          setLoading(false);
+        }, 500);
       });
   }, [userId]);
 
@@ -66,7 +193,41 @@ export default function RecommendationsPage() {
     return (
       <div>
         <h2>Personalized Recommendations</h2>
-        <p>Loading recommendations...</p>
+        <p style={{ marginBottom: 20, color: "#666" }}>
+          Analyzing your learning history and preferences...
+        </p>
+        <div style={{ 
+          padding: 20, 
+          border: "1px solid #ddd", 
+          borderRadius: 8, 
+          backgroundColor: "#f9f9f9",
+          textAlign: "center",
+          color: "#666"
+        }}>
+          <div style={{ marginBottom: 10 }}>🔄 Generating personalized recommendations...</div>
+          <div style={{ 
+            width: "100%", 
+            height: 4, 
+            backgroundColor: "#e0e0e0", 
+            borderRadius: 2,
+            overflow: "hidden",
+            position: "relative"
+          }}>
+            <div style={{
+              width: "60%",
+              height: "100%",
+              backgroundColor: "#007bff",
+              borderRadius: 2,
+              animation: "shimmer 1.5s ease-in-out infinite"
+            }}></div>
+          </div>
+        </div>
+        <style dangerouslySetInnerHTML={{__html: `
+          @keyframes shimmer {
+            0%, 100% { opacity: 0.6; transform: translateX(0); }
+            50% { opacity: 1; transform: translateX(10px); }
+          }
+        `}} />
       </div>
     );
   }
@@ -161,15 +322,41 @@ export default function RecommendationsPage() {
             )}
             
             {rec.metadata && (
-              <div style={{ marginTop: 10, fontSize: 12, color: "#888" }}>
+              <div style={{ marginTop: 10, fontSize: 12, color: "#888", display: "flex", flexWrap: "wrap", gap: 10 }}>
                 {rec.metadata.category && (
-                  <span style={{ marginRight: 10 }}>
-                    Category: {rec.metadata.category}
+                  <span style={{ 
+                    padding: "2px 8px", 
+                    backgroundColor: "#f0f0f0", 
+                    borderRadius: 4 
+                  }}>
+                    📚 {rec.metadata.category}
                   </span>
                 )}
                 {rec.metadata.difficulty && (
-                  <span>
-                    Difficulty: {rec.metadata.difficulty}
+                  <span style={{ 
+                    padding: "2px 8px", 
+                    backgroundColor: "#f0f0f0", 
+                    borderRadius: 4 
+                  }}>
+                    ⚡ {rec.metadata.difficulty}
+                  </span>
+                )}
+                {rec.metadata.duration && (
+                  <span style={{ 
+                    padding: "2px 8px", 
+                    backgroundColor: "#f0f0f0", 
+                    borderRadius: 4 
+                  }}>
+                    ⏱️ {rec.metadata.duration}
+                  </span>
+                )}
+                {rec.metadata.instructor && (
+                  <span style={{ 
+                    padding: "2px 8px", 
+                    backgroundColor: "#f0f0f0", 
+                    borderRadius: 4 
+                  }}>
+                    👤 {rec.metadata.instructor}
                   </span>
                 )}
               </div>
